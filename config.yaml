@@ -1,0 +1,189 @@
+# Truth-Lens Configuration
+# ========================
+
+# Model Architecture
+model:
+  name: "TruthLens-Ensemble-v1"
+  ensemble_strategy: "weighted_average"  # soft_voting, weighted_average, stacking
+  
+  # Feature Extractors
+  features:
+    mfcc:
+      enabled: true
+      n_mfcc: 40
+      n_fft: 2048
+      hop_length: 512
+      
+    mel_spectrogram:
+      enabled: true
+      n_mels: 128
+      n_fft: 2048
+      hop_length: 512
+      
+    raw_waveform:
+      enabled: true
+      sequence_length: 16000  # 1 second at 16kHz
+      
+    spectral:
+      enabled: true
+      features: ["spectral_centroid", "spectral_rolloff", "zero_crossing_rate"]
+  
+  # CNN Architecture
+  cnn:
+    conv_layers:
+      - filters: 32
+        kernel_size: [3, 3]
+        activation: "relu"
+        pool_size: [2, 2]
+      - filters: 64
+        kernel_size: [3, 3]
+        activation: "relu"
+        pool_size: [2, 2]
+      - filters: 128
+        kernel_size: [3, 3]
+        activation: "relu"
+        pool_size: [2, 2]
+    
+    dense_layers:
+      - units: 256
+        activation: "relu"
+        dropout: 0.5
+      - units: 128
+        activation: "relu"
+        dropout: 0.3
+    
+    output:
+      units: 2
+      activation: "softmax"
+  
+  # Attention Mechanism
+  attention:
+    enabled: true
+    attention_dim: 128
+    attention_heads: 4
+
+# Audio Processing
+audio:
+  sample_rate: 16000  # Standard for speech
+  duration: 3.0  # seconds
+  chunk_duration: 3.0
+  hop_length: 512
+  
+  # Preprocessing
+  preprocessing:
+    normalize: true
+    remove_silence: true
+    silence_threshold: 0.01
+    apply_preemphasis: true
+    preemphasis_coef: 0.97
+
+# Training
+training:
+  batch_size: 32
+  epochs: 50
+  learning_rate: 0.001
+  optimizer: "adam"
+  loss: "categorical_crossentropy"
+  
+  # Early Stopping
+  early_stopping:
+    enabled: true
+    monitor: "val_accuracy"
+    patience: 10
+    restore_best_weights: true
+  
+  # Learning Rate Scheduling
+  lr_schedule:
+    enabled: true
+    factor: 0.5
+    patience: 5
+    min_lr: 0.00001
+  
+  # Data Augmentation
+  augmentation:
+    enabled: true
+    noise_factor: 0.005
+    time_stretch_rate: [0.9, 1.1]
+    pitch_shift_steps: [-2, 2]
+    time_mask_param: 30
+    freq_mask_param: 15
+
+# Dataset
+dataset:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+  
+  # Paths
+  paths:
+    raw_data: "data/raw"
+    processed_data: "data/processed"
+    models: "data/models"
+  
+  # Balanced Sampling
+  balance_classes: true
+  oversample_minority: false
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+  workers: 4
+  
+  # CORS
+  cors:
+    allow_origins: ["*"]
+    allow_methods: ["*"]
+    allow_headers: ["*"]
+  
+  # Rate Limiting
+  rate_limit:
+    enabled: true
+    requests_per_minute: 60
+  
+  # Response
+  confidence_threshold: 0.5
+  return_explanation: true
+  return_heatmap: true
+
+# Explainability
+explainability:
+  enabled: true
+  method: "grad_cam"  # grad_cam, lime, shap
+  heatmap_colormap: "jet"
+  overlay_opacity: 0.6
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/truth_lens.log"
+  
+  # MLFlow Tracking
+  mlflow:
+    enabled: false
+    tracking_uri: "http://localhost:5000"
+    experiment_name: "truth-lens"
+
+# Paths
+paths:
+  models_dir: "data/models"
+  logs_dir: "logs"
+  cache_dir: ".cache"
+  temp_dir: "temp"
+
+# Performance
+performance:
+  use_gpu: true
+  mixed_precision: false
+  num_threads: 4
+  cache_preprocessed: true
+
+# Deployment
+deployment:
+  model_version: "1.0.0"
+  model_format: "h5"  # h5, savedmodel, onnx
+  optimize_for_inference: true
+  quantization: false
